@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>План-сетка постов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">
+<script>try{var _t=localStorage.getItem("content-plan-theme");if(_t)document.documentElement.setAttribute("data-theme",_t);}catch(e){}</script>
+<style>
+:root{--bg:#eceff3;--surface:#fff;--ink:#17202b;--muted:#6b7686;--line:#dde2ea;--accent:#3a4fe8;--accent-ink:#fff;--chip:#eef1f6;--weekend:#f7f8fb;--hover:#eef1ff;--field:#f5f7fa;
+--rc0:#d6336c;--rc1:#1c8c6e;--rc2:#e08a00;--rc3:#7a5af8;--rc4:#0d8abf;--rc5:#8a6d3b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151b;--surface:#1a1f27;--ink:#e8ecf2;--muted:#929cab;--line:#2a313c;--accent:#8e9bff;--accent-ink:#10131c;--chip:#252c37;--weekend:#1d222b;--hover:#232a45;--field:#141920;
+--rc0:#ff7aa8;--rc1:#4cd1a8;--rc2:#ffb454;--rc3:#a890ff;--rc4:#5cc4f0;--rc5:#d1b073;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12151b;--surface:#1a1f27;--ink:#e8ecf2;--muted:#929cab;--line:#2a313c;--accent:#8e9bff;--accent-ink:#10131c;--chip:#252c37;--weekend:#1d222b;--hover:#232a45;--field:#141920;
+--rc0:#ff7aa8;--rc1:#4cd1a8;--rc2:#ffb454;--rc3:#a890ff;--rc4:#5cc4f0;--rc5:#d1b073;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Onest",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1240px;margin:0 auto;padding:20px 20px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{font-size:15px;font-weight:600;margin:0}
+.status{font-size:12px;color:var(--muted)}
+.banner{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:16px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+@media(max-width:940px){.layout{grid-template-columns:minmax(0,1fr)}}
+.boardhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.month{font-size:36px;font-weight:700;letter-spacing:-.02em;line-height:1;text-transform:capitalize}
+.nav{display:flex;gap:6px}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 13px;cursor:pointer;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-bottom:12px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.legend em{font-style:normal}
+.dot{width:9px;height:9px;border-radius:50%;border:1.8px solid var(--c);background:transparent;flex:none;display:inline-block}
+.dot.on{background:var(--c)}
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.dow{padding:9px 10px;font-size:12px;font-weight:500;color:var(--muted);border-bottom:1px solid var(--line)}
+.day{display:block;width:100%;min-height:112px;padding:8px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;background:var(--surface);text-align:left;cursor:pointer;overflow:hidden;transition:background .12s}
+.day:nth-child(7n){border-right:0}
+.day.we{background:var(--weekend)}
+.day:hover{background:var(--hover)}
+.day.out{opacity:.42}
+.day.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.num{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 4px;border-radius:13px;font-weight:600;font-size:13px;margin-bottom:2px}
+.day.today .num{background:var(--accent);color:var(--accent-ink)}
+.chip{display:flex;align-items:center;gap:6px;background:var(--chip);border-radius:6px;padding:3px 6px;margin-top:4px;font-size:12px;line-height:1.3}
+.ct{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.done .ct{color:var(--muted);text-decoration:line-through}
+.dots{display:flex;gap:3px;flex:none}
+.dots .dot{width:7px;height:7px;border-width:1.5px}
+.more{display:block;margin-top:4px;font-size:11px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+@media(min-width:941px){.panel{position:sticky;top:16px}}
+.dayhead{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.bignum{font-size:64px;font-weight:700;line-height:.95;letter-spacing:-.03em;color:var(--accent)}
+.wd{font-size:18px;font-weight:600;text-transform:capitalize}
+.cnt{font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);font-size:14px;padding:4px 0 8px}
+.note{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.note .t{flex:1;min-width:0;word-break:break-word;white-space:pre-wrap}
+.note.done .t{color:var(--muted);text-decoration:line-through}
+.note input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:1px 0 0;border:1.8px solid var(--muted);border-radius:50%;cursor:pointer;flex:none;display:grid;place-items:center}
+.note input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.note input[type=checkbox]:checked::after{content:"✓";color:var(--accent-ink);font-size:12px;font-weight:700;line-height:1}
+.note button,.person button{background:none;border:0;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:6px;font-size:14px}
+.note button:hover,.person button:hover{background:var(--chip);color:var(--ink)}
+.assign{flex-basis:100%;display:grid;gap:5px}
+.assign label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.assign label>span{display:inline-flex;align-items:center;gap:6px;width:104px;flex:none}
+select,input.txt,textarea{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.assign select{flex:1;font-size:13px}
+textarea{width:100%;min-height:74px;resize:vertical;margin-top:10px}
+.row{display:flex;margin-top:8px}
+.row .btn{width:100%}
+details{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:600}
+#people{margin-top:6px}
+.person{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px}
+.person .r{margin-left:auto;color:var(--muted);font-size:12px}
+.padd{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.padd input{flex:1;min-width:100px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#theme{padding:6px 11px;line-height:1}
+footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
+@media(max-width:560px){.app{padding:14px 10px 24px}.month{font-size:28px}.day{min-height:80px;padding:4px}.chip{padding:2px 4px;font-size:10px}.dots{display:none}.dow{padding:7px 4px;text-align:center}}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1 class="sr">План-сетка постов</h1>
+  <header class="top"><span class="status" id="status"></span><button class="btn" id="theme" type="button"></button></header>
+  <div id="banner" class="banner" hidden></div>
+  <div class="layout">
+    <section>
+      <div class="boardhead">
+        <div class="month" id="month"></div>
+        <div class="nav">
+          <button class="btn" id="prev" aria-label="Предыдущий месяц">←</button>
+          <button class="btn" id="today">Сегодня</button>
+          <button class="btn" id="next" aria-label="Следующий месяц">→</button>
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="cal"><div class="grid" id="grid"></div></div>
+    </section>
+    <aside class="panel">
+      <div class="dayhead"><div class="bignum" id="bignum"></div><div><div class="wd" id="seltitle"></div><div class="cnt" id="selcount"></div></div></div>
+      <div id="list"></div>
+      <textarea id="input" placeholder="Какой пост должен выйти в этот день?"></textarea>
+      <div class="row"><button class="btn primary" id="add">Добавить пост</button></div>
+      <details id="team"><summary>Команда и роли</summary>
+        <div id="people"></div>
+        <div class="padd"><input class="txt" id="pname" placeholder="Имя"><select id="prole"></select><button class="btn" id="padd">Добавить</button></div>
+      </details>
+    </aside>
+  </div>
+  <footer>версия 5</footer>
+</div>
+<script>
+// ====== НАСТРОЙКА: данные вашего проекта Supabase ======
+var SUPABASE_URL = "https://jlnspekqalhibdfzknre.supabase.co";
+var SUPABASE_KEY = "sb_publishable_LSt__uOOOaSSlCOlNiUWoA_tVG4TWsF";
+// ========================================================
+// Роли можно менять и дополнять: [код, название]
+var ROLES=[['designer','Дизайнер'],['copywriter','Копирайтер'],['videographer','Видеограф']];
+(function(){
+var LS='content-plan-items', LSP='content-plan-people', items={}, people={}, pending=0;
+var remoteOn=!!(SUPABASE_URL&&SUPABASE_KEY);
+var now=new Date(), view=new Date(now.getFullYear(),now.getMonth(),1), sel=key(now);
+
+function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function parse(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function uid(){return Math.random().toString(36).slice(2,8)+Date.now().toString(36);}
+function $(id){return document.getElementById(id);}
+function setStatus(s){$('status').textContent=s;}
+function roleIdx(c){for(var i=0;i<ROLES.length;i++)if(ROLES[i][0]===c)return i;return 0;}
+function dotEl(i,on){var d=document.createElement('span');d.className='dot'+(on?' on':'');d.style.setProperty('--c','var(--rc'+(i%6)+')');return d;}
+function pl(n){var a=n%100,b=n%10;return n+' '+((a>10&&a<15)?'постов':b===1?'пост':(b>1&&b<5)?'поста':'постов');}
+function roleName(c){for(var i=0;i<ROLES.length;i++)if(ROLES[i][0]===c)return ROLES[i][1];return c;}
+
+function api(path,opt){
+  opt=opt||{};
+  var h={apikey:SUPABASE_KEY,'Content-Type':'application/json'};
+  if(opt.headers)Object.assign(h,opt.headers);
+  return fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/'+path,{method:opt.method||'GET',headers:h,body:opt.body}).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.status===204?null:r.text().then(function(t){return t?JSON.parse(t):null;});
+  });
+}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(items));localStorage.setItem(LSP,JSON.stringify(people));}catch(e){}}
+function loadLocal(){
+  try{var r=localStorage.getItem(LS);if(r)items=JSON.parse(r);}catch(e){}
+  try{var p=localStorage.getItem(LSP);if(p)people=JSON.parse(p);}catch(e){}
+}
+function grouped(){
+  var g={};
+  Object.keys(items).forEach(function(id){var x=items[id];(g[x.day]=g[x.day]||[]).push(Object.assign({id:id},x));});
+  Object.keys(g).forEach(function(k){g[k].sort(function(a,b){return (a.ts||0)-(b.ts||0);});});
+  return g;
+}
+function fail(e,what){
+  setStatus(/HTTP 4/.test(e.message)?'Ошибка базы: выполните файл migrate_roles.sql в Supabase':what);
+}
+
+function put(id,data){
+  items[id]=data; saveLocal(); render();
+  if(!remoteOn){setStatus('Сохранено только в этом браузере');return;}
+  pending++; setStatus('Сохраняю…');
+  var row={id:id,day:data.day,body:data.body,done:!!data.done,ts:data.ts,assign:JSON.stringify(data.assign||{})};
+  api('notes',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(row)})
+    .then(function(){setStatus('Сохранено ✓');})
+    .catch(function(e){fail(e,'Не удалось сохранить — проверьте интернет');})
+    .then(function(){pending--;});
+}
+function upd(x,patch){
+  var d={day:x.day,body:x.body,done:x.done,ts:x.ts,assign:x.assign||{}};
+  Object.assign(d,patch); put(x.id,d);
+}
+function remove(id){
+  delete items[id]; saveLocal(); render();
+  if(!remoteOn)return;
+  pending++;
+  api('notes?id=eq.'+encodeURIComponent(id),{method:'DELETE'})
+    .catch(function(){setStatus('Не удалось удалить');})
+    .then(function(){pending--;});
+}
+function putPerson(id,data){
+  people[id]=data; saveLocal(); render();
+  if(!remoteOn)return;
+  pending++;
+  api('people',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(Object.assign({id:id},data))})
+    .then(function(){setStatus('Сохранено ✓');})
+    .catch(function(e){fail(e,'Не удалось сохранить человека');})
+    .then(function(){pending--;});
+}
+function removePerson(id){
+  delete people[id]; saveLocal(); render();
+  if(!remoteOn)return;
+  pending++;
+  api('people?id=eq.'+encodeURIComponent(id),{method:'DELETE'})
+    .catch(function(){setStatus('Не удалось удалить');})
+    .then(function(){pending--;});
+}
+function pull(){
+  if(!remoteOn||pending>0||document.hidden)return;
+  Promise.all([api('notes?select=*&order=ts.asc'),api('people?select=*&order=ts.asc')]).then(function(res){
+    if(pending>0)return;
+    var ni={},np={};
+    res[0].forEach(function(r){
+      var as={};try{as=JSON.parse(r.assign||'{}')||{};}catch(e){}
+      ni[r.id]={day:r.day,body:r.body,done:!!r.done,ts:Number(r.ts)||0,assign:as};
+    });
+    res[1].forEach(function(r){np[r.id]={name:r.name,role:r.role,ts:Number(r.ts)||0};});
+    if(JSON.stringify(ni)!==JSON.stringify(items)||JSON.stringify(np)!==JSON.stringify(people)){items=ni;people=np;saveLocal();render();}
+    setStatus('Общий календарь ✓');
+  }).catch(function(e){fail(e,'Нет связи с базой данных');});
+}
+
+function render(){
+  var notes=grouped();
+  var months=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+  $('month').textContent=months[view.getMonth()]+' '+view.getFullYear();
+  var g=$('grid'); g.innerHTML='';
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(function(n){var d=document.createElement('div');d.className='dow';d.textContent=n;g.appendChild(d);});
+  var first=new Date(view.getFullYear(),view.getMonth(),1);
+  var offset=(first.getDay()+6)%7;
+  var start=new Date(view.getFullYear(),view.getMonth(),1-offset);
+  var todayK=key(new Date());
+  for(var i=0;i<42;i++){
+    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), k=key(d);
+    if(i>=35 && d.getMonth()!==view.getMonth())break;
+    var b=document.createElement('button');
+    b.className='day'+((d.getDay()===0||d.getDay()===6)?' we':'')+(d.getMonth()!==view.getMonth()?' out':'')+(k===todayK?' today':'')+(k===sel?' sel':'');
+    var n=document.createElement('span');n.className='num';n.textContent=d.getDate();b.appendChild(n);
+    var arr=notes[k]||[];
+    arr.slice(0,2).forEach(function(x){
+      var c=document.createElement('span');c.className='chip'+(x.done?' done':'');
+      var ct=document.createElement('span');ct.className='ct';ct.textContent=(x.done?'✓ ':'')+x.body;c.appendChild(ct);
+      var ds=document.createElement('span');ds.className='dots';
+      ROLES.forEach(function(r,i){ds.appendChild(dotEl(i,!!people[(x.assign||{})[r[0]]]));});c.appendChild(ds);
+      var who=ROLES.map(function(r){var p=people[(x.assign||{})[r[0]]];return p?r[1]+': '+p.name:null;}).filter(Boolean).join('\n');
+      c.title=x.body+(who?'\n'+who:'');b.appendChild(c);
+    });
+    if(arr.length>2){var m=document.createElement('span');m.className='more';m.textContent='ещё '+(arr.length-2);b.appendChild(m);}
+    (function(kk){b.onclick=function(){sel=kk;var p=parse(kk);if(p.getMonth()!==view.getMonth())view=new Date(p.getFullYear(),p.getMonth(),1);render();};})(k);
+    g.appendChild(b);
+  }
+  renderSide(notes); renderTeam();
+}
+function renderSide(notes){
+  var p=parse(sel);
+  $('bignum').textContent=p.getDate();
+  $('seltitle').textContent=p.toLocaleDateString('ru-RU',{weekday:'long'});
+  var l=$('list'); l.innerHTML='';
+  var arr=notes[sel]||[];
+  var mn=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'][p.getMonth()];
+  $('selcount').textContent=mn+' '+p.getFullYear()+' · '+(arr.length?pl(arr.length):'нет постов');
+  if(!arr.length){var e=document.createElement('div');e.className='empty';e.textContent='На этот день постов нет. Опишите пост ниже и нажмите «Добавить пост».';l.appendChild(e);}
+  arr.forEach(function(x){
+    var r=document.createElement('div');r.className='note'+(x.done?' done':'');
+    var c=document.createElement('input');c.type='checkbox';c.checked=!!x.done;c.title='Отметить как опубликованный';
+    c.onchange=function(){upd(x,{done:c.checked});};
+    var t=document.createElement('div');t.className='t';t.textContent=x.body;
+    var ed=document.createElement('button');ed.textContent='✎';ed.title='Изменить';
+    ed.onclick=function(){var v=prompt('Изменить заметку',x.body);if(v!==null&&v.trim())upd(x,{body:v.trim()});};
+    var del=document.createElement('button');del.textContent='✕';del.title='Удалить';
+    del.onclick=function(){remove(x.id);};
+    r.append(c,t,ed,del);
+    var as=document.createElement('div');as.className='assign';
+    ROLES.forEach(function(ro){
+      var lab=document.createElement('label');var sp=document.createElement('span');sp.appendChild(dotEl(ROLES.indexOf(ro),true));sp.appendChild(document.createTextNode(ro[1]));
+      var sl=document.createElement('select');
+      var o0=document.createElement('option');o0.value='';o0.textContent='— не назначен —';sl.appendChild(o0);
+      Object.keys(people).filter(function(id){return people[id].role===ro[0];}).sort(function(a,b){return (people[a].ts||0)-(people[b].ts||0);}).forEach(function(id){
+        var o=document.createElement('option');o.value=id;o.textContent=people[id].name;sl.appendChild(o);
+      });
+      sl.value=(x.assign||{})[ro[0]]||'';
+      sl.onchange=function(){var na=Object.assign({},x.assign||{});if(sl.value)na[ro[0]]=sl.value;else delete na[ro[0]];upd(x,{assign:na});};
+      lab.append(sp,sl);as.appendChild(lab);
+    });
+    r.appendChild(as);l.appendChild(r);
+  });
+}
+function renderTeam(){
+  var box=$('people');box.innerHTML='';
+  var ids=Object.keys(people).sort(function(a,b){return (people[a].ts||0)-(people[b].ts||0);});
+  if(!ids.length){var e=document.createElement('div');e.className='empty';e.textContent='Добавьте людей и выберите их роль — потом их можно назначать на посты.';box.appendChild(e);return;}
+  ids.forEach(function(id){
+    var r=document.createElement('div');r.className='person';
+    var n=document.createElement('span');n.textContent=people[id].name;
+    var ro=document.createElement('span');ro.className='r';ro.textContent=roleName(people[id].role);
+    var del=document.createElement('button');del.textContent='✕';del.title='Удалить';
+    del.onclick=function(){if(confirm('Удалить «'+people[id].name+'» из команды?'))removePerson(id);};
+    r.append(dotEl(roleIdx(people[id].role),true),n,ro,del);box.appendChild(r);
+  });
+}
+
+$('add').onclick=function(){
+  var v=$('input').value.trim();if(!v)return;
+  $('input').value='';
+  put(uid(),{day:sel,body:v,done:false,ts:Date.now(),assign:{}});
+};
+$('input').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))$('add').click();});
+var lg=$('legend');ROLES.forEach(function(r,i){var s=document.createElement('span');s.appendChild(dotEl(i,true));s.appendChild(document.createTextNode(r[1]));lg.appendChild(s);});
+var lh=document.createElement('em');lh.textContent='Закрашенная точка — ответственный назначен, пустая — нет';lg.appendChild(lh);
+function curDark(){var t=document.documentElement.getAttribute('data-theme');return t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
+function paintTheme(){var d=curDark(),b=$('theme');b.textContent=d?'☀️ Светлая':'🌙 Тёмная';b.setAttribute('aria-label',d?'Включить светлую тему':'Включить тёмную тему');}
+$('theme').onclick=function(){var n=curDark()?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('content-plan-theme',n);}catch(e){}paintTheme();};
+paintTheme();
+var pr=$('prole');ROLES.forEach(function(r){var o=document.createElement('option');o.value=r[0];o.textContent=r[1];pr.appendChild(o);});
+$('padd').onclick=function(){
+  var v=$('pname').value.trim();if(!v)return;
+  $('pname').value='';
+  putPerson(uid(),{name:v,role:pr.value,ts:Date.now()});
+};
+$('pname').addEventListener('keydown',function(e){if(e.key==='Enter')$('padd').click();});
+$('prev').onclick=function(){view=new Date(view.getFullYear(),view.getMonth()-1,1);render();};
+$('next').onclick=function(){view=new Date(view.getFullYear(),view.getMonth()+1,1);render();};
+$('today').onclick=function(){var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);sel=key(t);render();};
+
+loadLocal();
+if(!remoteOn){var bn=$('banner');bn.hidden=false;bn.textContent='Общая база данных не подключена: заметки сохраняются только в этом браузере.';}
+render();
+if(remoteOn){pull();setInterval(pull,5000);document.addEventListener('visibilitychange',pull);window.addEventListener('focus',pull);}
+})();
+</script>
+</body>
+</html>
