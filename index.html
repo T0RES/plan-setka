@@ -145,7 +145,7 @@ footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
     </aside>
   </div>
   <dialog id="dlg"><h2>Вход для организатора</h2><p>Введите пароль организатора. Он нужен только для добавления и удаления постов.</p><input class="txt" type="password" id="pw" autocomplete="current-password" placeholder="Пароль"><div class="err" id="pwerr"></div><div class="dlgrow"><button class="btn" id="pwcancel" type="button">Отмена</button><button class="btn primary" id="pwok" type="button">Войти</button></div></dialog>
-  <footer>версия 9</footer>
+  <footer>версия 10</footer>
 </div>
 <script>
 // ====== НАСТРОЙКА: данные вашего проекта Supabase ======
@@ -153,7 +153,7 @@ var SUPABASE_URL = "https://jlnspekqalhibdfzknre.supabase.co";
 var SUPABASE_KEY = "sb_publishable_LSt__uOOOaSSlCOlNiUWoA_tVG4TWsF";
 // ========================================================
 // Роли можно менять и дополнять: [код, название]
-var ROLES=[['designer','Дизайнер'],['copywriter','Копирайтер'],['videographer','Видеограф'],['photographer','Фотограф']];
+var ROLES=[['designer','Дизайнер'],['copywriter','Копирайтер'],['videographer','Видеограф']];
 (function(){
 var LS='content-plan-items',LSP='content-plan-people',LME='content-plan-me',LPW='content-plan-pw';
 var items={},people={},pending=0,me=null,pw='',meSig='';
@@ -171,7 +171,7 @@ function $(id){return document.getElementById(id);}
 function setStatus(t){$('status').textContent=t;}
 function roleIdx(c){for(var i=0;i<ROLES.length;i++)if(ROLES[i][0]===c)return i;return -1;}
 function roleName(c){var i=roleIdx(c);return i<0?c:ROLES[i][1];}
-function rolesOf(p){return p&&p.role?p.role.split(',').filter(Boolean):[];}
+function rolesOf(p){return p&&p.role?p.role.split(',').filter(function(c){return c&&roleIdx(c)>=0;}):[];}
 function hasRole(p,c){return rolesOf(p).indexOf(c)>=0;}
 function dotEl(i,on){var d=document.createElement('span');d.className='dot'+(on?' on':'');d.style.setProperty('--c','var(--rc'+(Math.max(i,0)%6)+')');return d;}
 function pl(n){var a=n%100,b=n%10;return n+' '+((a>10&&a<15)?'постов':b===1?'пост':(b>1&&b<5)?'поста':'постов');}
