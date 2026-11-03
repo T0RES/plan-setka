@@ -89,6 +89,25 @@ summary{cursor:pointer;font-weight:600}
 .padd input{flex:1;min-width:100px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #theme{padding:6px 11px;line-height:1}
+.tools{display:flex;gap:8px}
+.ro .adm{display:none}
+.hint{background:var(--chip);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--muted);margin-bottom:10px}
+select:disabled,.note input:disabled{opacity:.7;cursor:default}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:20px;width:min(360px,90vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{font-size:18px;margin:0 0 6px}
+dialog p{margin:0 0 12px;font-size:13px;color:var(--muted)}
+dialog input{width:100%}
+.err{min-height:18px;margin-top:6px;font-size:13px;color:#d6336c}
+.dlgrow{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.meform{margin-top:10px;display:grid;gap:8px}
+.mecard{background:var(--chip);border-radius:10px;padding:10px;display:grid;gap:8px;font-size:14px}
+.chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.chk label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.take{font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;background:var(--chip);cursor:pointer;flex:none}
+.take:hover{border-color:var(--accent)}
+.person .dots{display:flex;gap:3px}
+.person b{font-weight:600}
 footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
 @media(max-width:560px){.app{padding:14px 10px 24px}.month{font-size:28px}.day{min-height:80px;padding:4px}.chip{padding:2px 4px;font-size:10px}.ct{-webkit-line-clamp:4;line-clamp:4}.dow{padding:7px 4px;text-align:center}}
 </style>
@@ -96,7 +115,7 @@ footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
 <body>
 <div class="app">
   <h1 class="sr">План-сетка постов</h1>
-  <header class="top"><span class="status" id="status"></span><button class="btn" id="theme" type="button"></button></header>
+  <header class="top"><span class="status" id="status"></span><span class="tools"><button class="btn" id="login" type="button" hidden></button><button class="btn" id="theme" type="button"></button></span></header>
   <div id="banner" class="banner" hidden></div>
   <div class="layout">
     <section>
@@ -113,16 +132,20 @@ footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
     </section>
     <aside class="panel">
       <div class="dayhead"><div class="bignum" id="bignum"></div><div><div class="wd" id="seltitle"></div><div class="cnt" id="selcount"></div></div></div>
+      <div class="hint" id="hint" hidden>Добавлять и удалять посты может только организатор. Если вы организатор, нажмите «Войти как организатор».</div>
       <div id="list"></div>
-      <textarea id="input" placeholder="Какой пост должен выйти в этот день?"></textarea>
-      <div class="row"><button class="btn primary" id="add">Добавить пост</button></div>
+      <div class="adm" id="addbox">
+        <textarea id="input" placeholder="Какой пост должен выйти в этот день?"></textarea>
+        <div class="row"><button class="btn primary" id="add">Добавить пост</button></div>
+      </div>
       <details id="team"><summary>Команда и роли</summary>
         <div id="people"></div>
-        <div class="padd"><input class="txt" id="pname" placeholder="Имя"><select id="prole"></select><button class="btn" id="padd">Добавить</button></div>
+        <div class="meform" id="meform"></div>
       </details>
     </aside>
   </div>
-  <footer>версия 7</footer>
+  <dialog id="dlg"><h2>Вход для организатора</h2><p>Введите пароль организатора. Он нужен только для добавления и удаления постов.</p><input class="txt" type="password" id="pw" autocomplete="current-password" placeholder="Пароль"><div class="err" id="pwerr"></div><div class="dlgrow"><button class="btn" id="pwcancel" type="button">Отмена</button><button class="btn primary" id="pwok" type="button">Войти</button></div></dialog>
+  <footer>версия 9</footer>
 </div>
 <script>
 // ====== НАСТРОЙКА: данные вашего проекта Supabase ======
@@ -130,32 +153,41 @@ var SUPABASE_URL = "https://jlnspekqalhibdfzknre.supabase.co";
 var SUPABASE_KEY = "sb_publishable_LSt__uOOOaSSlCOlNiUWoA_tVG4TWsF";
 // ========================================================
 // Роли можно менять и дополнять: [код, название]
-var ROLES=[['designer','Дизайнер'],['copywriter','Копирайтер'],['videographer','Видеограф']];
+var ROLES=[['designer','Дизайнер'],['copywriter','Копирайтер'],['videographer','Видеограф'],['photographer','Фотограф']];
 (function(){
-var LS='content-plan-items', LSP='content-plan-people', items={}, people={}, pending=0;
+var LS='content-plan-items',LSP='content-plan-people',LME='content-plan-me',LPW='content-plan-pw';
+var items={},people={},pending=0,me=null,pw='',meSig='';
 var remoteOn=!!(SUPABASE_URL&&SUPABASE_KEY);
-var now=new Date(), view=new Date(now.getFullYear(),now.getMonth(),1), sel=key(now);
+var isAdmin=!remoteOn;
+var now=new Date(),view=new Date(now.getFullYear(),now.getMonth(),1),sel=key(now);
+try{pw=localStorage.getItem(LPW)||'';var m=localStorage.getItem(LME);if(m)me=JSON.parse(m);}catch(e){}
+if(remoteOn&&pw)isAdmin=true;
 
 function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function parse(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 function uid(){return Math.random().toString(36).slice(2,8)+Date.now().toString(36);}
+function tok(){var a=new Uint8Array(16);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(x){return ('0'+x.toString(16)).slice(-2);}).join('');}
 function $(id){return document.getElementById(id);}
-function setStatus(s){$('status').textContent=s;}
-function roleIdx(c){for(var i=0;i<ROLES.length;i++)if(ROLES[i][0]===c)return i;return 0;}
-function dotEl(i,on){var d=document.createElement('span');d.className='dot'+(on?' on':'');d.style.setProperty('--c','var(--rc'+(i%6)+')');return d;}
+function setStatus(t){$('status').textContent=t;}
+function roleIdx(c){for(var i=0;i<ROLES.length;i++)if(ROLES[i][0]===c)return i;return -1;}
+function roleName(c){var i=roleIdx(c);return i<0?c:ROLES[i][1];}
+function rolesOf(p){return p&&p.role?p.role.split(',').filter(Boolean):[];}
+function hasRole(p,c){return rolesOf(p).indexOf(c)>=0;}
+function dotEl(i,on){var d=document.createElement('span');d.className='dot'+(on?' on':'');d.style.setProperty('--c','var(--rc'+(Math.max(i,0)%6)+')');return d;}
 function pl(n){var a=n%100,b=n%10;return n+' '+((a>10&&a<15)?'постов':b===1?'пост':(b>1&&b<5)?'поста':'постов');}
-function roleName(c){for(var i=0;i<ROLES.length;i++)if(ROLES[i][0]===c)return ROLES[i][1];return c;}
 
 function api(path,opt){
   opt=opt||{};
   var h={apikey:SUPABASE_KEY,'Content-Type':'application/json'};
   if(opt.headers)Object.assign(h,opt.headers);
   return fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/'+path,{method:opt.method||'GET',headers:h,body:opt.body}).then(function(r){
-    if(!r.ok)throw new Error('HTTP '+r.status);
+    if(!r.ok)return r.text().then(function(t){var er=new Error('HTTP '+r.status);er.body=t;throw er;});
     return r.status===204?null:r.text().then(function(t){return t?JSON.parse(t):null;});
   });
 }
+function rpc(name,args){return api('rpc/'+name,{method:'POST',body:JSON.stringify(args)});}
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(items));localStorage.setItem(LSP,JSON.stringify(people));}catch(e){}}
+function saveMe(){try{if(me)localStorage.setItem(LME,JSON.stringify(me));else localStorage.removeItem(LME);}catch(e){}}
 function loadLocal(){
   try{var r=localStorage.getItem(LS);if(r)items=JSON.parse(r);}catch(e){}
   try{var p=localStorage.getItem(LSP);if(p)people=JSON.parse(p);}catch(e){}
@@ -167,58 +199,66 @@ function grouped(){
   return g;
 }
 function fail(e,what){
-  setStatus(/HTTP 4/.test(e.message)?'Ошибка базы: выполните файл migrate_roles.sql в Supabase':what);
+  var b=e.body||'';
+  if(b.indexOf('bad_password')>=0){logout();setStatus('Неверный пароль или он был изменён — войдите заново');return;}
+  if(b.indexOf('bad_token')>=0){setStatus('Нет прав на это действие');return;}
+  if(b.indexOf('PGRST202')>=0){setStatus('Выполните обновлённый файл secure.sql в Supabase');return;}
+  setStatus(/HTTP 4/.test(e.message)?'Ошибка базы: проверьте, что выполнены SQL-файлы (migrate_roles.sql, secure.sql)':what);
 }
+function send(name,args){
+  pending++;setStatus('Сохраняю…');
+  rpc(name,args).then(function(){setStatus('Сохранено ✓');}).catch(function(e){fail(e,'Не удалось сохранить — проверьте интернет');}).then(function(){pending--;});
+}
+function afterLocal(){saveLocal();render();if(!remoteOn)setStatus('Сохранено только в этом браузере');}
 
-function put(id,data){
-  items[id]=data; saveLocal(); render();
-  if(!remoteOn){setStatus('Сохранено только в этом браузере');return;}
-  pending++; setStatus('Сохраняю…');
-  var row={id:id,day:data.day,body:data.body,done:!!data.done,ts:data.ts,assign:JSON.stringify(data.assign||{})};
-  api('notes',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(row)})
-    .then(function(){setStatus('Сохранено ✓');})
-    .catch(function(e){fail(e,'Не удалось сохранить — проверьте интернет');})
-    .then(function(){pending--;});
+// ----- посты (добавление, правка текста, удаление — только организатор) -----
+function createPost(day,body){
+  if(!isAdmin)return;var id=uid(),ts=Date.now();
+  items[id]={day:day,body:body,done:false,ts:ts,assign:{}};afterLocal();
+  if(remoteOn)send('save_note',{p_pw:pw,p_id:id,p_day:day,p_body:body,p_ts:ts});
 }
-function upd(x,patch){
-  var d={day:x.day,body:x.body,done:x.done,ts:x.ts,assign:x.assign||{}};
-  Object.assign(d,patch); put(x.id,d);
+function editPost(id,body){
+  var x=items[id];if(!isAdmin||!x)return;x.body=body;afterLocal();
+  if(remoteOn)send('save_note',{p_pw:pw,p_id:id,p_day:x.day,p_body:body,p_ts:x.ts});
 }
-function remove(id){
-  delete items[id]; saveLocal(); render();
-  if(!remoteOn)return;
-  pending++;
-  api('notes?id=eq.'+encodeURIComponent(id),{method:'DELETE'})
-    .catch(function(){setStatus('Не удалось удалить');})
-    .then(function(){pending--;});
+function removePost(id){
+  if(!isAdmin)return;delete items[id];afterLocal();
+  if(remoteOn)send('delete_note',{p_pw:pw,p_id:id});
 }
-function putPerson(id,data){
-  people[id]=data; saveLocal(); render();
-  if(!remoteOn)return;
-  pending++;
-  api('people',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(Object.assign({id:id},data))})
-    .then(function(){setStatus('Сохранено ✓');})
-    .catch(function(e){fail(e,'Не удалось сохранить человека');})
-    .then(function(){pending--;});
+// ----- отметка «опубликован» и ответственные — все -----
+function setDone(id,v){var x=items[id];if(!x)return;x.done=v;afterLocal();if(remoteOn)send('set_done',{p_id:id,p_done:v});}
+function setAssign(id,role,pid){
+  var x=items[id];if(!x)return;x.assign=Object.assign({},x.assign);
+  if(pid)x.assign[role]=pid;else delete x.assign[role];
+  afterLocal();if(remoteOn)send('assign_post',{p_id:id,p_role:role,p_person:pid||''});
+}
+// ----- команда: каждый добавляет и удаляет себя сам -----
+function addMe(name,roles){
+  var id=uid(),t=tok(),ts=Date.now();
+  people[id]={name:name,role:roles.join(','),ts:ts};me={id:id,token:t};saveMe();afterLocal();
+  if(remoteOn)send('add_person',{p_id:id,p_name:name,p_roles:roles.join(','),p_ts:ts,p_token:t});
+}
+function setMyRoles(roles){
+  if(!me||!people[me.id])return;people[me.id].role=roles.join(',');afterLocal();
+  if(remoteOn)send('update_person',{p_id:me.id,p_token:me.token,p_pw:'',p_name:people[me.id].name,p_roles:roles.join(',')});
 }
 function removePerson(id){
-  delete people[id]; saveLocal(); render();
-  if(!remoteOn)return;
-  pending++;
-  api('people?id=eq.'+encodeURIComponent(id),{method:'DELETE'})
-    .catch(function(){setStatus('Не удалось удалить');})
-    .then(function(){pending--;});
+  var own=!!me&&me.id===id;if(!own&&!isAdmin)return;
+  var t=own?me.token:'';delete people[id];if(own){me=null;saveMe();}afterLocal();
+  if(remoteOn)send('delete_person',{p_id:id,p_token:t,p_pw:own?'':pw});
 }
+
 function pull(){
   if(!remoteOn||pending>0||document.hidden)return;
-  Promise.all([api('notes?select=*&order=ts.asc'),api('people?select=*&order=ts.asc')]).then(function(res){
+  Promise.all([api('notes?select=*&order=ts.asc'),api('people?select=id,name,role,ts&order=ts.asc')]).then(function(res){
     if(pending>0)return;
     var ni={},np={};
     res[0].forEach(function(r){
       var as={};try{as=JSON.parse(r.assign||'{}')||{};}catch(e){}
       ni[r.id]={day:r.day,body:r.body,done:!!r.done,ts:Number(r.ts)||0,assign:as};
     });
-    res[1].forEach(function(r){np[r.id]={name:r.name,role:r.role,ts:Number(r.ts)||0};});
+    res[1].forEach(function(r){np[r.id]={name:r.name,role:r.role||'',ts:Number(r.ts)||0};});
+    if(me&&!np[me.id]){me=null;saveMe();}
     if(JSON.stringify(ni)!==JSON.stringify(items)||JSON.stringify(np)!==JSON.stringify(people)){items=ni;people=np;saveLocal();render();}
     setStatus('Общий календарь ✓');
   }).catch(function(e){fail(e,'Нет связи с базой данных');});
@@ -228,15 +268,15 @@ function render(){
   var notes=grouped();
   var months=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
   $('month').textContent=months[view.getMonth()]+' '+view.getFullYear();
-  var g=$('grid'); g.innerHTML='';
+  var g=$('grid');g.innerHTML='';
   ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(function(n){var d=document.createElement('div');d.className='dow';d.textContent=n;g.appendChild(d);});
   var first=new Date(view.getFullYear(),view.getMonth(),1);
   var offset=(first.getDay()+6)%7;
   var start=new Date(view.getFullYear(),view.getMonth(),1-offset);
   var todayK=key(new Date());
   for(var i=0;i<42;i++){
-    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), k=key(d);
-    if(i>=35 && d.getMonth()!==view.getMonth())break;
+    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i),k=key(d);
+    if(i>=35&&d.getMonth()!==view.getMonth())break;
     var b=document.createElement('button');
     b.className='day'+((d.getDay()===0||d.getDay()===6)?' we':'')+(d.getMonth()!==view.getMonth()?' out':'')+(k===todayK?' today':'')+(k===sel?' sel':'');
     var n=document.createElement('span');n.className='num';n.textContent=d.getDate();b.appendChild(n);
@@ -245,7 +285,7 @@ function render(){
       var c=document.createElement('span');c.className='chip'+(x.done?' done':'');
       var ct=document.createElement('span');ct.className='ct';ct.textContent=(x.done?'✓ ':'')+x.body;c.appendChild(ct);
       var ds=document.createElement('span');ds.className='dots';
-      ROLES.forEach(function(r,i){ds.appendChild(dotEl(i,!!people[(x.assign||{})[r[0]]]));});c.appendChild(ds);
+      ROLES.forEach(function(r,j){ds.appendChild(dotEl(j,!!people[(x.assign||{})[r[0]]]));});c.appendChild(ds);
       var who=ROLES.map(function(r){var p=people[(x.assign||{})[r[0]]];return p?r[1]+': '+p.name:null;}).filter(Boolean).join('\n');
       c.title=x.body+(who?'\n'+who:'');b.appendChild(c);
     });
@@ -253,83 +293,142 @@ function render(){
     (function(kk){b.onclick=function(){sel=kk;var p=parse(kk);if(p.getMonth()!==view.getMonth())view=new Date(p.getFullYear(),p.getMonth(),1);render();};})(k);
     g.appendChild(b);
   }
-  renderSide(notes); renderTeam();
+  renderSide(notes);renderTeam();
 }
 function renderSide(notes){
   var p=parse(sel);
   $('bignum').textContent=p.getDate();
   $('seltitle').textContent=p.toLocaleDateString('ru-RU',{weekday:'long'});
-  var l=$('list'); l.innerHTML='';
+  var l=$('list');l.innerHTML='';
   var arr=notes[sel]||[];
   var mn=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'][p.getMonth()];
   $('selcount').textContent=mn+' '+p.getFullYear()+' · '+(arr.length?pl(arr.length):'нет постов');
-  if(!arr.length){var e=document.createElement('div');e.className='empty';e.textContent='На этот день постов нет. Опишите пост ниже и нажмите «Добавить пост».';l.appendChild(e);}
+  if(!arr.length){var e=document.createElement('div');e.className='empty';e.textContent=isAdmin?'На этот день постов нет. Опишите пост ниже и нажмите «Добавить пост».':'На этот день постов нет.';l.appendChild(e);}
   arr.forEach(function(x){
     var r=document.createElement('div');r.className='note'+(x.done?' done':'');
     var c=document.createElement('input');c.type='checkbox';c.checked=!!x.done;c.title='Отметить как опубликованный';
-    c.onchange=function(){upd(x,{done:c.checked});};
+    c.onchange=function(){setDone(x.id,c.checked);};
     var t=document.createElement('div');t.className='t';t.textContent=x.body;
-    var ed=document.createElement('button');ed.textContent='✎';ed.title='Изменить';
-    ed.onclick=function(){var v=prompt('Изменить заметку',x.body);if(v!==null&&v.trim())upd(x,{body:v.trim()});};
-    var del=document.createElement('button');del.textContent='✕';del.title='Удалить';
-    del.onclick=function(){remove(x.id);};
+    var ed=document.createElement('button');ed.className='adm';ed.textContent='✎';ed.title='Изменить текст';
+    ed.onclick=function(){var v=prompt('Изменить текст поста',x.body);if(v!==null&&v.trim())editPost(x.id,v.trim());};
+    var del=document.createElement('button');del.className='adm';del.textContent='✕';del.title='Удалить пост';
+    del.onclick=function(){if(confirm('Удалить этот пост?'))removePost(x.id);};
     r.append(c,t,ed,del);
     var as=document.createElement('div');as.className='assign';
     ROLES.forEach(function(ro){
-      var lab=document.createElement('label');var sp=document.createElement('span');sp.appendChild(dotEl(ROLES.indexOf(ro),true));sp.appendChild(document.createTextNode(ro[1]));
+      var lab=document.createElement('label');var sp=document.createElement('span');
+      sp.appendChild(dotEl(ROLES.indexOf(ro),true));sp.appendChild(document.createTextNode(ro[1]));
       var sl=document.createElement('select');
       var o0=document.createElement('option');o0.value='';o0.textContent='— не назначен —';sl.appendChild(o0);
-      Object.keys(people).filter(function(id){return people[id].role===ro[0];}).sort(function(a,b){return (people[a].ts||0)-(people[b].ts||0);}).forEach(function(id){
-        var o=document.createElement('option');o.value=id;o.textContent=people[id].name;sl.appendChild(o);
+      Object.keys(people).filter(function(id){return hasRole(people[id],ro[0]);}).sort(function(a,b){return (people[a].ts||0)-(people[b].ts||0);}).forEach(function(id){
+        var o=document.createElement('option');o.value=id;o.textContent=people[id].name+(me&&me.id===id?' (вы)':'');sl.appendChild(o);
       });
       sl.value=(x.assign||{})[ro[0]]||'';
-      sl.onchange=function(){var na=Object.assign({},x.assign||{});if(sl.value)na[ro[0]]=sl.value;else delete na[ro[0]];upd(x,{assign:na});};
-      lab.append(sp,sl);as.appendChild(lab);
+      sl.onchange=function(){setAssign(x.id,ro[0],sl.value);};
+      lab.append(sp,sl);
+      if(me&&people[me.id]&&hasRole(people[me.id],ro[0])&&(x.assign||{})[ro[0]]!==me.id){
+        var tb=document.createElement('button');tb.className='take';tb.type='button';tb.textContent='Беру';tb.title='Назначить себя';
+        tb.onclick=function(){setAssign(x.id,ro[0],me.id);};lab.appendChild(tb);
+      }
+      as.appendChild(lab);
     });
     r.appendChild(as);l.appendChild(r);
   });
 }
+function chkRow(selected,onchange){
+  var w=document.createElement('div');w.className='chk';
+  ROLES.forEach(function(ro,i){
+    var lb=document.createElement('label');var cb=document.createElement('input');cb.type='checkbox';cb.value=ro[0];cb.checked=selected.indexOf(ro[0])>=0;
+    if(onchange)cb.onchange=onchange;lb.append(cb,dotEl(i,true),document.createTextNode(ro[1]));w.appendChild(lb);
+  });
+  return w;
+}
+function checked(w){return Array.prototype.filter.call(w.querySelectorAll('input'),function(c){return c.checked;}).map(function(c){return c.value;});}
 function renderTeam(){
   var box=$('people');box.innerHTML='';
   var ids=Object.keys(people).sort(function(a,b){return (people[a].ts||0)-(people[b].ts||0);});
-  if(!ids.length){var e=document.createElement('div');e.className='empty';e.textContent='Добавьте людей и выберите их роль — потом их можно назначать на посты.';box.appendChild(e);return;}
+  if(!ids.length){var e=document.createElement('div');e.className='empty';e.textContent='В команде пока никого. Добавьте себя ниже: тогда вас можно будет назначать на посты.';box.appendChild(e);}
   ids.forEach(function(id){
     var r=document.createElement('div');r.className='person';
-    var n=document.createElement('span');n.textContent=people[id].name;
-    var ro=document.createElement('span');ro.className='r';ro.textContent=roleName(people[id].role);
-    var del=document.createElement('button');del.textContent='✕';del.title='Удалить';
-    del.onclick=function(){if(confirm('Удалить «'+people[id].name+'» из команды?'))removePerson(id);};
-    r.append(dotEl(roleIdx(people[id].role),true),n,ro,del);box.appendChild(r);
+    var ds=document.createElement('span');ds.className='dots';rolesOf(people[id]).forEach(function(c){ds.appendChild(dotEl(roleIdx(c),true));});
+    var n=document.createElement('span');n.textContent=people[id].name+(me&&me.id===id?' (вы)':'');
+    var ro=document.createElement('span');ro.className='r';ro.textContent=rolesOf(people[id]).map(roleName).join(', ');
+    r.append(ds,n,ro);
+    if(isAdmin&&!(me&&me.id===id)){var del=document.createElement('button');del.className='adm';del.textContent='✕';del.title='Удалить из команды';
+      del.onclick=function(){if(confirm('Удалить «'+people[id].name+'» из команды?'))removePerson(id);};r.appendChild(del);}
+    box.appendChild(r);
   });
+  renderMe();
+}
+function renderMe(){
+  var sig=me&&people[me.id]?'me:'+me.id+':'+people[me.id].name+':'+people[me.id].role:'new';
+  if(sig===meSig)return;meSig=sig;
+  var f=$('meform');f.innerHTML='';
+  if(me&&people[me.id]){
+    var card=document.createElement('div');card.className='mecard';
+    var h=document.createElement('div');h.innerHTML='Вы в команде: <b></b>';h.querySelector('b').textContent=people[me.id].name;card.appendChild(h);
+    var row=chkRow(rolesOf(people[me.id]),function(){var rs=checked(row);if(!rs.length){setStatus('Нужна хотя бы одна роль');meSig='';renderMe();return;}setMyRoles(rs);});
+    card.appendChild(row);
+    var bt=document.createElement('button');bt.className='btn';bt.textContent='Выйти из команды';
+    bt.onclick=function(){if(confirm('Удалить себя из команды?'))removePerson(me.id);};card.appendChild(bt);f.appendChild(card);
+  }else{
+    var inp=document.createElement('input');inp.className='txt';inp.placeholder='Ваше имя';inp.maxLength=60;
+    var row2=chkRow([],null);
+    var ad=document.createElement('button');ad.className='btn primary';ad.textContent='Добавить меня в команду';
+    ad.onclick=function(){var nm=inp.value.trim(),rs=checked(row2);if(!nm||!rs.length){setStatus('Укажите имя и отметьте хотя бы одну роль');return;}addMe(nm,rs);};
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter')ad.click();});
+    var hint=document.createElement('div');hint.className='empty';hint.textContent='Отметьте, что вы делаете: можно несколько ролей.';
+    f.append(inp,hint,row2,ad);
+  }
 }
 
-$('add').onclick=function(){
-  var v=$('input').value.trim();if(!v)return;
-  $('input').value='';
-  put(uid(),{day:sel,body:v,done:false,ts:Date.now(),assign:{}});
+// ----- вход организатора -----
+function applyMode(){
+  var ro=remoteOn&&!isAdmin;
+  document.body.classList.toggle('ro',ro);
+  var lb=$('login');lb.hidden=!remoteOn;lb.textContent=isAdmin?'Выйти (организатор)':'Войти как организатор';
+  $('hint').hidden=!ro;
+}
+function logout(){pw='';isAdmin=!remoteOn;try{localStorage.removeItem(LPW);}catch(e){}applyMode();render();}
+$('login').onclick=function(){
+  if(isAdmin){logout();setStatus('Вы вышли из режима организатора');return;}
+  $('pw').value='';$('pwerr').textContent='';$('dlg').showModal();$('pw').focus();
 };
-$('input').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))$('add').click();});
-var lg=$('legend');ROLES.forEach(function(r,i){var s=document.createElement('span');s.appendChild(dotEl(i,true));s.appendChild(document.createTextNode(r[1]));lg.appendChild(s);});
-var lh=document.createElement('em');lh.textContent='Закрашенная точка — ответственный назначен, пустая — нет';lg.appendChild(lh);
+$('pwcancel').onclick=function(){$('dlg').close();};
+function tryLogin(){
+  var v=$('pw').value;if(!v)return;
+  $('pwok').disabled=true;$('pwerr').textContent='';
+  rpc('check_password',{p_pw:v}).then(function(ok){
+    if(ok===true){pw=v;isAdmin=true;try{localStorage.setItem(LPW,v);}catch(e){}$('dlg').close();applyMode();render();setStatus('Режим организатора включён');}
+    else $('pwerr').textContent='Неверный пароль';
+  }).catch(function(e){$('pwerr').textContent=((e.body||'').indexOf('check_password')>=0)?'Сначала выполните secure.sql в Supabase':'Не удалось проверить пароль';})
+  .then(function(){$('pwok').disabled=false;});
+}
+$('pwok').onclick=tryLogin;
+$('pw').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+
+// ----- тема -----
 function curDark(){var t=document.documentElement.getAttribute('data-theme');return t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
-function paintTheme(){var d=curDark(),b=$('theme');b.textContent=d?'☀️ Светлая':'🌙 Тёмная';b.setAttribute('aria-label',d?'Включить светлую тему':'Включить тёмную тему');}
+function paintTheme(){var d=curDark(),bb=$('theme');bb.textContent=d?'☀️ Светлая':'🌙 Тёмная';bb.setAttribute('aria-label',d?'Включить светлую тему':'Включить тёмную тему');}
 $('theme').onclick=function(){var n=curDark()?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('content-plan-theme',n);}catch(e){}paintTheme();};
 paintTheme();
-var pr=$('prole');ROLES.forEach(function(r){var o=document.createElement('option');o.value=r[0];o.textContent=r[1];pr.appendChild(o);});
-$('padd').onclick=function(){
-  var v=$('pname').value.trim();if(!v)return;
-  $('pname').value='';
-  putPerson(uid(),{name:v,role:pr.value,ts:Date.now()});
-};
-$('pname').addEventListener('keydown',function(e){if(e.key==='Enter')$('padd').click();});
+
+var lg=$('legend');ROLES.forEach(function(r,i){var sp=document.createElement('span');sp.appendChild(dotEl(i,true));sp.appendChild(document.createTextNode(r[1]));lg.appendChild(sp);});
+var lh=document.createElement('em');lh.textContent='Закрашенная точка — ответственный назначен, пустая — нет';lg.appendChild(lh);
+
+$('add').onclick=function(){var v=$('input').value.trim();if(!v)return;$('input').value='';createPost(sel,v);};
+$('input').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))$('add').click();});
 $('prev').onclick=function(){view=new Date(view.getFullYear(),view.getMonth()-1,1);render();};
 $('next').onclick=function(){view=new Date(view.getFullYear(),view.getMonth()+1,1);render();};
 $('today').onclick=function(){var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);sel=key(t);render();};
 
 loadLocal();
-if(!remoteOn){var bn=$('banner');bn.hidden=false;bn.textContent='Общая база данных не подключена: заметки сохраняются только в этом браузере.';}
-render();
-if(remoteOn){pull();setInterval(pull,5000);document.addEventListener('visibilitychange',pull);window.addEventListener('focus',pull);}
+if(!remoteOn){var bn=$('banner');bn.hidden=false;bn.textContent='Общая база данных не подключена: данные сохраняются только в этом браузере.';}
+render();applyMode();
+if(remoteOn){
+  if(pw)rpc('check_password',{p_pw:pw}).then(function(ok){if(ok!==true)logout();}).catch(function(){});
+  pull();setInterval(pull,5000);document.addEventListener('visibilitychange',pull);window.addEventListener('focus',pull);
+}
 })();
 </script>
 </body>
