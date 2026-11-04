@@ -52,7 +52,7 @@ h1{font-size:15px;font-weight:600;margin:0}
 .num{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 4px;border-radius:13px;font-weight:600;font-size:13px;margin-bottom:2px}
 .day.today .num{background:var(--accent);color:var(--accent-ink)}
 .chip{display:flex;flex-direction:column;align-items:stretch;gap:3px;background:var(--chip);border-radius:6px;padding:4px 6px;margin-top:4px;font-size:12px;line-height:1.3}
-.ct{min-width:0;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow-wrap:anywhere}
+.ct{min-width:0;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
 .chip.done .ct{color:var(--muted);text-decoration:line-through}
 .dots{display:flex;gap:3px}
 .dots .dot{width:7px;height:7px;border-width:1.5px}
@@ -97,7 +97,10 @@ dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface)
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog h2{font-size:18px;margin:0 0 6px}
 dialog p{margin:0 0 12px;font-size:13px;color:var(--muted)}
-dialog input{width:100%}
+dialog input.txt{width:100%}
+#pw{-webkit-text-security:disc;text-security:disc}
+#pw.plain{-webkit-text-security:none;text-security:none}
+.showpw{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--muted);cursor:pointer}
 .err{min-height:18px;margin-top:6px;font-size:13px;color:#d6336c}
 .dlgrow{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 .meform{margin-top:10px;display:grid;gap:8px}
@@ -109,7 +112,25 @@ dialog input{width:100%}
 .person .dots{display:flex;gap:3px}
 .person b{font-weight:600}
 footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
-@media(max-width:560px){.app{padding:14px 10px 24px}.month{font-size:28px}.day{min-height:80px;padding:4px}.chip{padding:2px 4px;font-size:10px}.ct{-webkit-line-clamp:4;line-clamp:4}.dow{padding:7px 4px;text-align:center}}
+@media(max-width:560px){
+.app{padding:8px 6px 20px}
+.top{margin-bottom:10px}
+.top .btn,.nav .btn{padding:5px 10px;font-size:13px}
+.boardhead{margin-bottom:6px}
+.month{font-size:24px}
+.legend{margin-bottom:8px;font-size:11px;gap:4px 12px}
+.legend em{display:none}
+.cal{border-radius:10px}
+.dow{padding:5px 2px;font-size:11px;text-align:center}
+.day{min-height:56px;padding:3px 2px}
+.num{min-width:20px;height:20px;font-size:11px;margin-bottom:1px}
+.chip{padding:2px 3px;margin-top:2px;font-size:9.5px;line-height:1.2;gap:2px;border-radius:4px}
+.ct{-webkit-line-clamp:6;line-clamp:6}
+.dots{gap:2px}
+.dots .dot{width:5px;height:5px;border-width:1px}
+.more{font-size:9px;margin-top:2px}
+.panel{padding:14px}
+}
 </style>
 </head>
 <body>
@@ -144,8 +165,8 @@ footer{margin-top:18px;font-size:11px;color:var(--muted);text-align:center}
       </details>
     </aside>
   </div>
-  <dialog id="dlg"><h2>Вход для организатора</h2><p>Введите пароль организатора. Он нужен только для добавления и удаления постов.</p><input class="txt" type="password" id="pw" autocomplete="current-password" placeholder="Пароль"><div class="err" id="pwerr"></div><div class="dlgrow"><button class="btn" id="pwcancel" type="button">Отмена</button><button class="btn primary" id="pwok" type="button">Войти</button></div></dialog>
-  <footer>версия 10</footer>
+  <dialog id="dlg"><h2>Вход для организатора</h2><p>Введите пароль организатора. Он нужен только для добавления и удаления постов.</p><input class="txt" type="text" id="pw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Пароль"><label class="showpw"><input type="checkbox" id="showpw"> Показать пароль</label><div class="err" id="pwerr"></div><div class="dlgrow"><button class="btn" id="pwcancel" type="button">Отмена</button><button class="btn primary" id="pwok" type="button">Войти</button></div></dialog>
+  <footer>версия 12</footer>
 </div>
 <script>
 // ====== НАСТРОЙКА: данные вашего проекта Supabase ======
@@ -392,7 +413,7 @@ function applyMode(){
 function logout(){pw='';isAdmin=!remoteOn;try{localStorage.removeItem(LPW);}catch(e){}applyMode();render();}
 $('login').onclick=function(){
   if(isAdmin){logout();setStatus('Вы вышли из режима организатора');return;}
-  $('pw').value='';$('pwerr').textContent='';$('dlg').showModal();$('pw').focus();
+  $('pw').value='';$('showpw').checked=false;$('pw').classList.remove('plain');if(!maskOk)$('pw').type='password';$('pwerr').textContent='';$('dlg').showModal();$('pw').focus();
 };
 $('pwcancel').onclick=function(){$('dlg').close();};
 function tryLogin(){
@@ -404,6 +425,9 @@ function tryLogin(){
   }).catch(function(e){$('pwerr').textContent=((e.body||'').indexOf('check_password')>=0)?'Сначала выполните secure.sql в Supabase':'Не удалось проверить пароль';})
   .then(function(){$('pwok').disabled=false;});
 }
+var maskOk=!!(window.CSS&&CSS.supports&&CSS.supports('-webkit-text-security','disc'));
+if(!maskOk)$('pw').type='password';
+$('showpw').onchange=function(){var on=$('showpw').checked;if(maskOk)$('pw').classList.toggle('plain',on);else $('pw').type=on?'text':'password';};
 $('pwok').onclick=tryLogin;
 $('pw').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
 
